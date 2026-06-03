@@ -41,9 +41,11 @@
 </div>
 
 <script>
-    const supabase = window.supabase.createClient(
+    // 1. Изменили название переменной на supabaseClient во избежание конфликта
+    // 2. Вставьте сюда ваш настоящий anon key, начинающийся на eyJ...
+    const supabaseClient = window.supabase.createClient(
         'https://uztashzxcfyzkxlpzdpj.supabase.co',
-        'sb_publishable_F5DJdkfHS6tR2E2sq3krvA_9ZWguXL3'
+        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV6dGFzaHp4Y2Z5emt4bHB6ZHBqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA0MjE1MDQsImV4cCI6MjA5NTk5NzUwNH0.r2ZzVEmZcXrQ6O5bnm72RF9duK2uSMICfOkfjD16d58'
     );
 
     function showMessage(text, isError = true) {
@@ -88,7 +90,8 @@
             return;
         }
 
-        const { data, error } = await supabase.auth.signUp({
+        // Используем supabaseClient для запроса
+        const { data, error } = await supabaseClient.auth.signUp({
             email: email,
             password: password,
             options: {
@@ -113,6 +116,8 @@
         }
     });
 </script>
+
+
 
 </body>
 </html>
