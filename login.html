@@ -1,63 +1,41 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang = ru>
 <head>
     <meta charset="UTF-8">
-    <title>Мой Сайт</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register Form</title>
     <link rel="stylesheet" href="style.css">
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
 
-<div id="auth-block" class="modal">
-    <h2>Добро пожаловать! Войдите, чтобы продолжить</h2>
-    <button id="google-btn">Войти через Google</button>
+<div class="wrapper">
 
-    <form id="email-form">
-        <input type="email" id="email" placeholder="Email" required>
-        <input type="password" id="password" placeholder="Пароль" required>
-        <button type="submit">Войти по Email</button>
+    <h2>Register</h2>
+    <form action="#">
+        <div class="input-box">
+            <input type="text" placeholder="Enter Your Name" required>
+        </div>
+        <div class="input-box">
+            <input type="text" placeholder="Enter Your Email" required>
+        </div>
+        <div class="input-box">
+            <input type="text" placeholder="Enter Your Password" required>
+        </div>
+        <div class="input-box">
+            <input type="text" placeholder="Confirm Password" required>
+        </div>
+        <div class="policy">
+            <input type="checkbox">
+            <h3>I accept all the Terms and Condition</h3>
+        </div>
+        <div class="input-box button">
+            <input type="submit" value="Register Now">
+        </div>
+        <div class="text">
+            <h3>Don't have an Account?  <a href="index.html">Register now</a></h3>
+        </div>
     </form>
 </div>
 
-<div id="main-content" style="display: none;">
-    <h1>Привет, ты внутри сайта!</h1>
-</div>
-
-<script>
-    // Инициализация Supabase (возьмите ключи в настройках проекта API)
-    const supabaseUrl = 'https://uztashzxcfyzkxlpzdpj.supabase.co';
-    const supabaseKey = sb_publishable_F5DJdkfHS6tR2E2sq3krvA_9ZWguXL3;
-    const supabase = supabase_js.createClient(supabaseUrl, supabaseKey);
-
-    // 1. Проверяем при заходе: вошел ли пользователь?
-    async function checkUser() {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (user) {
-            // Если вошел: прячем форму, показываем сайт
-            document.getElementById('auth-block').style.display = 'none';
-            document.getElementById('main-content').style.display = 'block';
-        } else {
-            // Если не вошел: показываем форму
-            document.getElementById('auth-block').style.display = 'block';
-        }
-    }
-    checkUser();
-
-    // 2. Логика для кнопки Google
-    document.getElementById('google-btn').addEventListener('click', async () => {
-        await supabase.auth.signInWithOAuth({ provider: 'google' });
-    });
-
-    // 3. Логика для Email формы
-    document.getElementById('email-form').addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const email = document.getElementById('email').value;
-        const password = document.getElementById('password').value;
-
-        const { error } = await supabase.auth.signInWithPassword({ email, password });
-        if (error) alert(error.message);
-        else window.location.reload(); // Перезагружаем страницу, checkUser сработает заново
-    });
-</script>
 </body>
 </html>

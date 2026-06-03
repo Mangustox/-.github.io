@@ -1,41 +1,134 @@
-<!DOCTYPE html>
-<html lang = ru>
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Register Form</title>
-    <link rel="stylesheet" href="style.css">
-</head>
-<body>
+<script>
+    // ПОДКЛЮЧЕНИЕ К SUPABASE
+    const supabase = window.supabase.createClient(
+        'https://uztashzxcfyzkxlpzdpj.supabase.co',
+        'sb_publishable_F5DJdkfHS6tR2E2sq3krvA_9ZWguXL3'
+    );
 
-    <div class="wrapper">
+    // Функция показа сообщений
+    function showMessage(text, isError = true) {
+        const msgDiv = document.getElementById('message');
+        if (!msgDiv) {
+            // Создаём элемент для сообщений, если его нет
+            const wrapper = document.querySelector('.wrapper');
+            const newMsgDiv = document.createElement('div');
+            newMsgDiv.id = 'message';
+            newMsgDiv.style.marginTop = '15px';
+            newMsgDiv.style.textAlign = 'center';
+            wrapper.appendChild(newMsgDiv);
+        }
+        const messageDiv = document.getElementById('message');
+        messageDiv.textContent = text;
+        messageDiv.style.color = isError ? 'red' : 'green';
+        setTimeout(() => {
+            messageDiv.textContent = '';
+        }, 5000);
+    }
 
-        <h2>Register</h2>
-        <form action="#">
-            <div class="input-box">
-                <input type="text" placeholder="Enter Your Name" required>
-            </div>
-            <div class="input-box">
-                <input type="text" placeholder="Enter Your Email" required>
-            </div>
-            <div class="input-box">
-                <input type="text" placeholder="Enter Your Password" required>
-            </div>
-            <div class="input-box">
-                <input type="text" placeholder="Confirm Password" required>
-            </div>
-            <div class="policy">
-                <input type="checkbox">
-                <h3>I accept all the Terms and Condition</h3>
-            </div>
-            <div class="input-box button">
-                <input type="submit" value="Register Now">
-            </div>
-            <div class="text">
-                <h3>Already have an Account <a href="#">Login now</a></h3>
-            </div>
-        </form>
-    </div>
+    // ОБРАБОТКА ФОРМЫ РЕГИСТРАЦИИ
+    const form = document.getElementById('registerForm');
 
-</body>
-</html>
+    if (form) {
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault(); // Отменяем перезагрузку страницы
+
+            // Получаем значения полей
+            const name = document.getElementById('regName').value.trim();
+            const email = document.getElementById('regEmail').value.trim();
+            const password = document.getElementById('regPassword').value;
+            const confirmPassword = document.getElementById('regConfirmPassword').value;
+            const termsChecked = document.getElementById('termsCheckbox').checked;
+
+            // ПРОВЕРКИ
+            if (!name || !email || !password || !confirmPassword) {
+                showMessage('Заполните все поля!');
+                return;
+            }
+
+            if (password !== confirmPassword) {
+                showMessage('Пароли не совпадают!');
+                return;
+            }
+
+            if (password.length < 6) {
+                showMessage('Пароль должен быть не менее 6 символов!');
+                return;
+            }
+
+            if (!termsChecked) {
+                showMessage('Примите условия использования!');
+                return;
+            }
+
+            // РЕГИСТРАЦИЯ В SUPABASE С ПЕРЕНАПРАВЛЕНИЕМ
+            const { data, error } = await supabase.auth.signUp({
+                email: email,
+                password: password,
+                options: {
+                    data: {
+                        username: name,
+                        full_name: name
+                    },
+                    emailRedirectTo: 'https://mangustox.github.io/-.github.io/dashboard.html'
+                }
+            });
+
+            if (error) {
+                showMessage(error.message);
+            } else {
+                showMessage('Регистрация успешна! Проверьте почту для подтверждения.', false);
+
+                // Очищаем форму после успешной регистрации
+                document.getElementById('regName').value = '';
+                document.getElementById('regEmail').value = '';
+                document.getElementById('regPassword').value = '';
+                document.getElementById('regConfirmPassword').value = '';
+                document.getElementById('termsCheckbox').checked = false;
+            }
+        });
+    }
+
+    // ПРОВЕРКА АВТОРИЗАЦИИ (если пользователь уже вошёл)
+    async function checkUser() {
+        const { data: { user } } = await supabase.auth.getUser();
+
+        if (user) {
+            // Пользователь авторизован — показываем личный кабинет
+            const wrapper = document.querySelector('.wrapper');
+            const formElement = document.getElementById('registerForm');
+
+            if (formElement && wrapper) {
+                // Получаем имя пользователя из метаданных
+                const username = user.user_metadata?.username || user.email;
+
+                // Скрываем форму
+                formElement.style.display = 'none';
+
+                // Показываем приветствие
+                const welcomeDiv = document.createElement('div');
+                welcomeDiv.id = 'welcomeMessage';
+                welcomeDiv.innerHTML = `
+                    <h2 style="color: green; text-align: center;">Добро пожаловать, ${username}!</h2>
+                    <p style="text-align: center; margin: 20px 0;">Вы успешно вошли в свой аккаунт.</p>
+                    <div class="input-box button">
+                        <input type="button" value="Выйти" onclick="logout()">
+                    </div>
+                `;
+                wrapper.appendChild(welcomeDiv);
+            }
+        }
+    }
+
+    // ФУНКЦИЯ ВЫХОДА
+    async function logout() {
+        const { error } = await supabase.auth.signOut();
+        if (error) {
+            showMessage(error.message);
+        } else {
+            window.location.reload(); // Перезагружаем страницу
+        }
+    }
+
+    // Запускаем проверку пользователя при загрузке страницы
+    checkUser();
+</script>
