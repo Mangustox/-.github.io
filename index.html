@@ -3,65 +3,82 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Register Form</title>
+    <title>Register & Verify</title>
     <link rel="stylesheet" href="style.css">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
 
 <div class="wrapper">
-    <h2>Register</h2>
+    <div id="register-step">
+        <h2>Register</h2>
+        <form id="registerForm">
+            <div class="input-box">
+                <input type="text" id="regName" placeholder="Enter Your Name" required>
+            </div>
+            <div class="input-box">
+                <input type="email" id="regEmail" placeholder="Enter Your Email" required>
+            </div>
+            <div class="input-box">
+                <input type="password" id="regPassword" placeholder="Enter Your Password" required>
+            </div>
+            <div class="input-box">
+                <input type="password" id="regConfirmPassword" placeholder="Confirm Password" required>
+            </div>
+            <div class="policy">
+                <input type="checkbox" id="termsCheckbox">
+                <h3>I accept all the Terms and Condition</h3>
+            </div>
+            <div class="input-box button">
+                <input type="submit" value="Register Now">
+            </div>
+            <div class="text">
+                <h3>Already have an Account? <a href="login.html">Login now</a></h3>
+            </div>
+        </form>
+    </div>
 
-    <form id="registerForm">
-        <div class="input-box">
-            <input type="text" id="regName" placeholder="Enter Your Name" required>
-        </div>
-        <div class="input-box">
-            <input type="email" id="regEmail" placeholder="Enter Your Email" required>
-        </div>
-        <div class="input-box">
-            <input type="password" id="regPassword" placeholder="Enter Your Password" required>
-        </div>
-        <div class="input-box">
-            <input type="password" id="regConfirmPassword" placeholder="Confirm Password" required>
-        </div>
-        <div class="policy">
-            <input type="checkbox" id="termsCheckbox">
-            <h3>I accept all the Terms and Condition</h3>
-        </div>
-        <div class="input-box button">
-            <input type="submit" value="Register Now">
-        </div>
-        <div class="text">
-            <h3>Already have an Account? <a href="login.html">Login now</a></h3>
-        </div>
-    </form>
+    <div id="otp-step" style="display: none;">
+        <h2>Verify Email</h2>
+        <p style="text-align: center; margin-bottom: 20px;">Мы отправили 6-значный код на вашу почту</p>
+        <form id="otpForm">
+            <div class="input-box">
+                <input type="text" id="otpCode" placeholder="Введите 6-значный код" maxlength="6" required>
+            </div>
+            <div class="input-box button">
+                <input type="submit" value="Подтвердить код">
+            </div>
+        </form>
+    </div>
 
     <div id="message"></div>
 </div>
 
 <script>
-    // 1. Изменили название переменной на supabaseClient во избежание конфликта
-    // 2. Вставьте сюда ваш настоящий anon key, начинающийся на eyJ...
+    // Инициализация (замените второй параметр на ваш реальный anon-key на eyJ...)
     const supabaseClient = window.supabase.createClient(
         'https://uztashzxcfyzkxlpzdpj.supabase.co',
         'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV6dGFzaHp4Y2Z5emt4bHB6ZHBqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA0MjE1MDQsImV4cCI6MjA5NTk5NzUwNH0.r2ZzVEmZcXrQ6O5bnm72RF9duK2uSMICfOkfjD16d58'
     );
 
+    // Переменная для сохранения email между шагами
+    let userEmail = '';
+
+    // Функция показа уведомлений
     function showMessage(text, isError = true) {
         const msgDiv = document.getElementById('message');
         msgDiv.textContent = text;
         msgDiv.style.color = isError ? 'red' : 'green';
         msgDiv.style.marginTop = '15px';
         msgDiv.style.textAlign = 'center';
-        setTimeout(() => {
-            msgDiv.textContent = '';
-        }, 5000);
+        setTimeout(() => { msgDiv.textContent = ''; }, 7000);
     }
 
-    const form = document.getElementById('registerForm');
+    const registerForm = document.getElementById('registerForm');
+    const otpForm = document.getElementById('otpForm');
 
-    form.addEventListener('submit', async (e) => {
+    // ЛОГИКА ШАГА 1: ОТПРАВКА ДАННЫХ РЕГИСТРАЦИИ
+    registerForm.addEventListener('submit', async (e) => {
         e.preventDefault();
 
         const name = document.getElementById('regName').value.trim();
@@ -70,54 +87,56 @@
         const confirmPassword = document.getElementById('regConfirmPassword').value;
         const termsChecked = document.getElementById('termsCheckbox').checked;
 
-        if (!name || !email || !password || !confirmPassword) {
-            showMessage('Заполните все поля!');
-            return;
-        }
+        if (password !== confirmPassword) { showMessage('Пароли не совпадают!'); return; }
+        if (password.length < 6) { showMessage('Пароль должен быть не менее 6 символов!'); return; }
+        if (!termsChecked) { showMessage('Примите условия использования!'); return; }
 
-        if (password !== confirmPassword) {
-            showMessage('Пароли не совпадают!');
-            return;
-        }
+        // Сохраняем email, он понадобится на следующем шаге
+        userEmail = email;
 
-        if (password.length < 6) {
-            showMessage('Пароль должен быть не менее 6 символов!');
-            return;
-        }
-
-        if (!termsChecked) {
-            showMessage('Примите условия использования!');
-            return;
-        }
-
-        // Используем supabaseClient для запроса
+        // Отправляем запрос на регистрацию в Supabase
         const { data, error } = await supabaseClient.auth.signUp({
             email: email,
             password: password,
             options: {
-                data: {
-                    username: name,
-                    full_name: name
-                },
-                emailRedirectTo: 'https://mangustox.github.io/-.github.io/main.html'
+                data: { username: name }
             }
         });
 
         if (error) {
             showMessage(error.message);
         } else {
-            showMessage('Регистрация успешна! Проверьте почту для подтверждения.', false);
+            // Скрываем форму регистрации и показываем форму ввода OTP-кода
+            document.getElementById('register-step').style.display = 'none';
+            document.getElementById('otp-step').style.display = 'block';
+            showMessage('Код отправлен! Проверьте почту.', false);
+        }
+    });
 
-            document.getElementById('regName').value = '';
-            document.getElementById('regEmail').value = '';
-            document.getElementById('regPassword').value = '';
-            document.getElementById('regConfirmPassword').value = '';
-            document.getElementById('termsCheckbox').checked = false;
+    // ЛОГИКА ШАГА 2: ПРОВЕРКА 6-ЗНАЧНОГО КОДА
+    otpForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const code = document.getElementById('otpCode').value.trim();
+
+        // Отправляем код на проверку в Supabase
+        const { data, error } = await supabaseClient.auth.verifyOtp({
+            email: userEmail,
+            token: code,
+            type: 'signup' // Указываем тип проверки — подтверждение регистрации
+        });
+
+        if (error) {
+            showMessage('Неверный или просроченный код: ' + error.message);
+        } else {
+            showMessage('Почта успешно подтверждена! Перенаправление...', false);
+
+            // Через 2 секунды перекидываем пользователя на главную страницу сайта
+            setTimeout(() => {
+                window.location.href = 'main.html';
+            }, 2000);
         }
     });
 </script>
-
-
 
 </body>
 </html>
