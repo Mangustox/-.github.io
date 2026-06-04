@@ -1,32 +1,68 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-    <link rel="stylesheet" href="style.css">
     <meta charset="UTF-8">
     <title>Секретные Футфетишисткие Демократическо-Космополитические Файлы Ассоциации Трёх Медведей</title>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-
-
-
-    <main>Главная</main>
-
-<div class ="background">
-    <a href="ilya.html">О Илюше</a>
-</div>
-<div class ="background">
-    <a href="timofey.html">О Тимофейке</a>
-</div>
-
-
-
 <nav class="navbar">
-<img src="images/Medvedi.png" alt="Medvedi" class="medved">
-
+    <img src="images/Medvedi.png" alt="Medvedi" class="medved">
+    <a href="main.html">Главная</a>
     <a href="news.html">Новости</a>
     <a href="settings.html">Настройки</a>
-
 </nav>
+
+<div class="profile-box" id="profileBox" style="display: none;">
+    <p>Агент: <strong id="userEmailDisplay">Загрузка...</strong></p>
+    <button id="logoutBtn">Покинуть базу (Выйти)</button>
+</div>
+
+<main>
+    <h1>Главная База</h1>
+
+    <div class="background">
+        <a href="ilya.html">Досье: О Илюше</a>
+    </div>
+
+    <div class="background">
+        <a href="timofey.html">Досье: О Тимофейке</a>
+    </div>
+</main>
+
+<script src="supabase.js"></script>
+
+<script>
+    // 1. Инициализируем клиент (НЕ ЗАБУДЬ ВСТАВИТЬ СВОЙ ANON KEY!)
+    const supabaseClient = window.supabase.createClient(
+        'https://uztashzxcfyzkxlpzdpj.supabase.co',
+        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV6dGFzaHp4Y2Z5emt4bHB6ZHBqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA0MjE1MDQsImV4cCI6MjA5NTk5NzUwNH0.r2ZzVEmZcXrQ6O5bnm72RF9duK2uSMICfOkfjD16d58'
+    );
+
+    // 2. Функция, которая достает почту и проверяет доступ
+    async function loadUserProfile() {
+        // Запрашиваем данные текущего юзера из памяти браузера
+        const { data: { user }, error } = await supabaseClient.auth.getUser();
+
+        if (user) {
+            // Юзер найден: показываем блок профиля и вписываем почту
+            document.getElementById('profileBox').style.display = 'block';
+            document.getElementById('userEmailDisplay').textContent = user.email;
+        } else {
+            // Юзер не найден (зашел без кода): выкидываем на страницу входа
+            window.location.href = 'index.html';
+        }
+    }
+
+    // Запускаем проверку сразу при открытии страницы
+    loadUserProfile();
+
+    // 3. Настраиваем кнопку выхода
+    document.getElementById('logoutBtn').addEventListener('click', async () => {
+        await supabaseClient.auth.signOut(); // Стираем токен
+        window.location.href = 'index.html'; // Возвращаем на стартовую
+    });
+</script>
 </body>
 </html>
